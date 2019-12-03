@@ -1,0 +1,6 @@
+aoc*
+!aoc*.*
+
+*.o
+*.tmp.c
+fns.txt
