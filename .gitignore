@@ -2,6 +2,10 @@ aoc*
 !/aoc*
 !aoc*.*
 
+*.exe
+*.ilk
+*.pdb
+
 *.o
 *.tmp.c
 fns.txt
