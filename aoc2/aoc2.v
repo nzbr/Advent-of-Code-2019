@@ -1,20 +1,11 @@
 module main
 
 import os
-import strconv
 import intcode
-
-fn parse_strings(a []string) []i64 {
-	mut result := []i64
-	for str in a {
-		result << i64(strconv.atoi(str))
-	}
-	return result
-}
 
 fn main() {
 	sdata := os.args[1].split(",")
-	data := parse_strings(sdata)
+	data := intcode.parse_strings(sdata)
 
 	// Part One
 	println(run_program(data, 12, 2))

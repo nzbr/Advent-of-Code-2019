@@ -1,5 +1,7 @@
 module intcode
 
+import strconv
+
 const (
 	debug = false
 )
@@ -9,6 +11,14 @@ struct Machine {
 		running bool
 		mem     []i64
 		rip     i64
+}
+
+pub fn parse_strings(a []string) []i64 {
+	mut result := []i64
+	for str in a {
+		result << i64(strconv.atoi(str))
+	}
+	return result
 }
 
 pub fn interpret(program []i64) i64 {
