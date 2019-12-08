@@ -2,7 +2,6 @@ module main
 
 import os
 import strconv
-import intcode
 
 fn parse_strings(a []string) []i64 {
 	mut result := []i64
@@ -40,7 +39,7 @@ fn main() {
 			}
 		}
 		a = b
-		a++
+		a += 1
 	}
 }
 
@@ -49,5 +48,5 @@ fn run_program(data []i64, a i64, b i64) i64 {
 	prog[1] = a
 	prog[2] = b
 
-	return intcode.interpret(prog)
+	return interpret(prog)
 }
