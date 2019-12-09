@@ -1,72 +1,105 @@
 module intcode
 
-import strconv
-
-const (
-	debug = false
-)
-
-struct Machine {
-	mut:
+pub struct Machine {
+	pub mut:
+		debug   bool
+		dumpmem bool
+		realin  bool
+		realout bool
+		
 		running bool
 		mem     []i64
 		rip     i64
+		modes   []bool
+
+		stdin   []i64
+		stdout  []i64
 }
 
-pub fn parse_strings(a []string) []i64 {
-	mut result := []i64
-	for str in a {
-		result << i64(strconv.atoi(str))
-	}
-	return result
-}
-
-pub fn interpret(program []i64) i64 {
-	mut mach := Machine {
+pub fn new(program []i64) Machine {
+	return Machine {
 		running: true,
-		mem: program,
+		mem: program.clone(),
 		rip: 0
 	}
-
-	mach.run()
-
-	return mach.mem[0]
 }
 
-fn (m mut Machine) run() {
+pub fn (m mut Machine) reset(program []i64) {
+	m.running = true
+	m.mem = program.clone()
+	m.rip = 0
+}
+
+/// MAIN LOOP
+
+pub fn (m mut Machine) run() i64 {
 	for m.running && m.rip < m.mem.len {
-		if debug {
-			print('${m.rip}/${m.mem.len}\t')
+		instruction := m.mem[m.rip]
+		inststr := instruction.str()
+		m.modes = []
+		if inststr.len > 2 {
+			strmodes := inststr[0..inststr.len-2]
+			for i := strmodes.len-1; i >= 0; i-- {
+				if strmodes[i] == `1` {
+					m.modes << true
+				} else {
+					m.modes << false
+				}
+			}
 		}
-		match m.mem[m.rip] {
-			1    { m.add()  }
-			2    { m.mult() }
+
+		if m.debug {
+			print(m.rip.str()+": ")
+		}
+
+		match instruction % 100 {
+			1    { m.add()  } // ADD
+			2    { m.mult() } // MULT
+			3    { m.read() } // READ
+			4    { m.prnt() } // PRNT
+			5    { m.jnz()  } // JNZ
+			6    { m.jz()   } // JZ
+			7    { m.lt()   } // LT
+			8    { m.eq()   } // EQ
 			99   { m.halt() }
 			else { panic('Unknow OpCode ${m.mem[m.rip]}') }
 		}
+
+		if m.dumpmem {
+			print("|")
+			for i, x in m.mem {
+				if i64(i) == m.rip {
+					print(" >"+x.str()+"< ")
+				} else {
+					print(" "+x.str()+" ")
+				}
+			}
+			println("|")
+		}
+	}
+
+	return m.mem[0]
+}
+
+/// HELPER FUNCTIONS
+
+fn (m Machine) is_direct(n int) bool {
+	return m.modes.len > n && m.modes[n]
+}
+
+fn (m Machine) arg_addr(n int) i64 {
+	if m.is_direct(n) {
+		return m.rip+n+1
+	} else {
+		return m.mem[m.rip+n+1]
 	}
 }
 
-fn (m mut Machine) add() {
-	if debug {
-		println('\$${m.mem[m.rip+3]} = ${m.mem[m.mem[m.rip+1]]} + ${m.mem[m.mem[m.rip+2]]}')
-	}
-	m.mem[m.mem[m.rip+3]] = m.mem[m.mem[m.rip+1]] + m.mem[m.mem[m.rip+2]]
-	m.rip += 4
+fn (m Machine) get_arg(n int) i64 {
+	return m.mem[m.arg_addr(n)]
 }
 
-fn (m mut Machine) mult() {
-	if debug {
-		println('\$${m.mem[m.rip+3]} = ${m.mem[m.mem[m.rip+1]]} * ${m.mem[m.mem[m.rip+2]]}')
-	}
-	m.mem[m.mem[m.rip+3]] = m.mem[m.mem[m.rip+1]] * m.mem[m.mem[m.rip+2]]
-	m.rip += 4
+fn (m mut Machine) set_arg(n int, v i64) {
+		m.mem[m.mem[m.rip+n+1]] = v
 }
 
-fn (m mut Machine) halt() {
-	if debug {
-		println("HALT")
-	}
-	m.running = false
-	m.rip = -1
-}
